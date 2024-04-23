@@ -1,2 +1,4 @@
 # betterpath
-An extension to Pythons pathlib.Path
+An Path library that is an extension to Pythons built-in pathlib.Path.
+
+
