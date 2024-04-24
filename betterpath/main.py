@@ -45,24 +45,20 @@ class Path(PosixPath):
             pattern = f"*{pattern}*"
         return sorted(list(path.glob("".join(map(either, pattern)))))
 
-    def most_like_path(self, recursive=True) -> Optional["Path"]:
+    def most_similar_path(self, recursive=True) -> Optional["Path"]:
         """
         Return the path with the most similar name
         R"""
-        if recursive:
-            candidates = list(self.parent.glob("**/*"))
-        else:
-            candidates = list(self.parent.glob("*"))
-        candidates = [p for p in candidates if p != self]
+        pattern = "**/*" if recursive else "*"
+        candidates = [p for p in self.parent.glob(pattern) if p != self]
         if not candidates:
             return None
-        sims = [
+        similarities = [
             fuzz.partial_ratio(self.name, p.name) + fuzz.ratio(self.name, p.name)
             for p in candidates
-            if p != self
         ]
-        m = max(zip(candidates, sims), key=lambda tup: tup[1])[0]
-        return m
+        most_similar = max(zip(candidates, similarities), key=lambda tup: tup[1])[0]
+        return most_similar
 
     def mtime(self) -> datetime.datetime:
         """
