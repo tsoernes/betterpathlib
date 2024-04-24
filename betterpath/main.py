@@ -83,13 +83,35 @@ class Path(PosixPath):
         base = self.name[: self.name.find(".")]
         return self.with_name(base + "".join([suffix] + self.suffixes))
 
-    def is_numerical(self) -> bool:
+    def has_numerical_suffix(self) -> bool:
         """
-        Returns True if there's an all-digit extension, e.g. myfile.pickle.100
+        Returns True if there's an all-digit extension.
+
+        Example
+        -------
+        >>> Path("myfile.x.001").has_numerical_suffix()
+        True
+        >>> Path("myfile.x.001.feather").has_numerical_suffix()
+        True
         """
         for s in self.suffixes:
             if s[1:].isdigit():
                 return True
+        return False
+
+    def has_primary_numerical_suffix(self) -> bool:
+        """
+        Returns True if the last suffix is all digits.
+
+        Example
+        -------
+        >>> Path("myfile.x.001").has_primary_numerical_suffix()
+        True
+        >>> Path("myfile.x.001.feather").has_primary_numerical_suffix()
+        False
+        """
+        if self.suffixes[-1][1:].isdigit():
+            return True
         return False
 
     def get_numerical(self) -> int | None:
@@ -115,7 +137,7 @@ class Path(PosixPath):
         >>> Path('myfile.rar.001').increase_numerical_width(4)
         Path('myfile.rar.0001')
         """
-        if not self.is_numerical():
+        if not self.has_numerical_suffix():
             raise ValueError()
         n = self.suffix[1:]
         if not n_digs >= len(n):
@@ -123,10 +145,14 @@ class Path(PosixPath):
         path = self.with_suffix("." + n.zfill(n_digs))
         return path
 
-    def make_numerical_ext_nonprimary(self) -> "Path":
+    def make_numerical_suffix_nonprimary(self) -> "Path":
         """
-        Shift the numerical extension as not to become the last/primary extension
-        myfile.x.feather.001 > myfile.x.001.feather
+        Shift the numerical extension as not to become the last (primary) extension
+
+        Example
+        -------
+        >>> Path("myfile.x.feather.001").make_numerical_suffix_nonprimary()
+        Path('myfile.x.001.feather')
         """
         ext = self.suffixes[-1]
         if not ext[1:].isdigit():
@@ -136,12 +162,16 @@ class Path(PosixPath):
         suffixes.insert(len(suffixes) - 1, ext)
         return self.with_suffixes(suffixes)
 
-    def make_numerical_ext_primary(self) -> "Path":
+    def make_numerical_suffix_primary(self) -> "Path":
         """
-        Shift the numerical extension to become the last/primary extension
-        myfile.x.001.feather > myfile.x.feather.001
+        Shift the numerical suffix to become the last (i.e. primary extension)
+
+        Example
+        -------
+        >>> Path("myfile.x.001.feather").make_numerical_suffix_primary()
+        Path('myfile.x.feather.001')
         """
-        if not self.is_numerical():
+        if not self.has_numerical_suffix():
             raise ValueError("No numerical extensions")
         ix, ext = 0, self.suffixes[0]
         for i, s in enumerate(self.suffixes):
@@ -165,34 +195,56 @@ class Path(PosixPath):
 
     def disk_usage(self) -> Tuple[int, int, int]:
         """
-        The amount used and free space on the disk which this file or directory resides on,
-        and the size of the disk
+        The disk size, the amount of used and free space on the disk of this path, in bytes.
         """
         return shutil.disk_usage(self)
 
     du = disk_usage
 
     def disk_usage_human(self) -> DiskUsageHuman:
-        """"""
+        """
+        The disk size, the amount of used and free space on the disk of this path, in human readable format (KiB, MiB, etc.).
+        """
         du = shutil.disk_usage(self)
-        duh = DiskUsageHuman(
-            bytes2human(du.total),
-            bytes2human(du.used),
-            bytes2human(du.free),
-        )
-        return duh
+        return DiskUsageHuman(*map(bytes2human, du))
 
     duh = disk_usage_human
 
-    def move(self, path: "PathOrStr", overwrite=False) -> "Path":
-        path = Path(path)
-        if not overwrite:
-            raise FileExistsError(path)
-        return shutil.move(self, path)
+    def move(self, dst: "PathOrStr", overwrite: bool = False) -> "Path":
+        """
+        Recursively move a file or directory to another location. This is
+        similar to the Unix "mv" command. Return the file or directory's
+        destination.
+
+        If dst already exists but is not a directory, it may be overwritten
+        depending `overwrite`.
+
+        Returns
+        -------
+        The destination path
+        """
+        dst = Path(dst)
+        if dst.exists() and dst.is_file() and not overwrite:
+            raise FileExistsError(dst)
+        return shutil.move(self, dst)
 
     mv = move
 
     def copy(self, dst: "PathOrStr", dirs_exist_ok=False) -> "Path":
+        """
+        Copy data to the destination.
+
+        If the source file is a directory then it is recursively copied.
+        If the source file is a directory and dirs_exist_ok is false (the default) and `dst` already exists, a
+        `FileExistsError` is raised. If `dirs_exist_ok` is true, the copying
+        operation will continue if it encounters existing directories, and files
+        within the `dst` tree will be overwritten by corresponding files from the
+        `src` tree.
+
+        Returns
+        -------
+        The destination path
+        """
         dst = Path(dst)
         if self.is_dir():
             return shutil.copytree(self, dst, dirs_exist_ok)
@@ -201,6 +253,9 @@ class Path(PosixPath):
     cp = copy
 
     def ls(self, sort_by_time: bool = False) -> None:
+        """
+        Run `ls` Linux command to list files.
+        """
         path = str(self.resolve())
         sort = "t" if sort_by_time else ""
         subprocess.run(f"ls --group-directories-first -hoG{sort} " + path, shell=True)
@@ -286,6 +341,7 @@ class Path(PosixPath):
 
     def without_suffixes(self) -> "Path":
         """
+        Remove all suffixes from from the path.
         Example:
         >>> Path('add_polling_info.py.bak.new').without_suffixes()
         Path('add_polling_info')
@@ -300,8 +356,21 @@ class Path(PosixPath):
     def next_unused_path(self, start: int = 0, n_digs: int = 3) -> "Path":
         """
         Return the next path with a numerical suffix that does not exist.
+
+        Example
+        -------
+        >>> import tempfile
+        >>> dir_ = Path(tempfile.gettempdir())
+        >>> (dir_ / 'somefile.rar.001').touch()
+        >>> (dir_ / 'somefile.rar.003').touch()
+        >>> (dir_ / 'somefile.rar.004').touch()
+        >>> (dir_ / 'somefile.rar.001').next_unused_path()
+        Path('/tmp/somefile.rar.002')
+        >>> (dir_ / 'somefile.rar.003').next_unused_path()
+        Path('/tmp/somefile.rar.005')
         """
         ext = self.suffix[1:]
+        path = self
         if ext.isdigit():
             n_digs = len(ext)
             ext_i = int(ext) + 1
