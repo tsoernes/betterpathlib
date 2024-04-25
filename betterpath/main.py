@@ -23,6 +23,14 @@ class Path(PosixPath):
         """
         Glob ignoring case
 
+        Parameters
+        ----------
+            pattern (str): The glob pattern to match against.
+
+        Returns
+        -------
+            List[Path]: A list of Path objects that match the pattern, ignoring case.
+
         Example
         -------
         >>> Path('..').glob_ignorecase("*")
@@ -48,7 +56,15 @@ class Path(PosixPath):
     def most_similar_path(self, recursive=True) -> Optional["Path"]:
         """
         Return the path with the most similar name
-        R"""
+
+        Parameters
+        ---------
+            recursive (bool): Whether to search recursively in subdirectories. Default is True.
+
+        Returns
+        -------
+            Optional[Path]: The path with the most similar name, or None if no similar paths are found.
+        """
         pattern = "**/*" if recursive else "*"
         candidates = [p for p in self.parent.glob(pattern) if p != self]
         if not candidates:
@@ -68,7 +84,15 @@ class Path(PosixPath):
 
     def prepend_suffix(self, suffix: str) -> "Path":
         """
-        Prepend suffix
+        Prepend a suffix to the path
+
+        Parameters
+        ----------
+            suffix (str): The suffix to prepend.
+
+        Returns
+        -------
+            Path: A new Path object with the suffix prepended.
 
         Example
         -------
@@ -81,7 +105,7 @@ class Path(PosixPath):
 
     def has_numerical_suffix(self) -> bool:
         """
-        Returns True if there's an all-digit extension.
+        Check if the path has an all-digit extension.
 
         Example
         -------
@@ -134,10 +158,8 @@ class Path(PosixPath):
         Path('myfile.rar.0001')
         """
         if not self.has_numerical_suffix():
-            raise ValueError()
+            raise ValueError(f"{self} has no numerical suffix")
         n = self.suffix[1:]
-        if not n_digs >= len(n):
-            raise ValueError()
         path = self.with_suffix("." + n.zfill(n_digs))
         return path
 
@@ -152,7 +174,7 @@ class Path(PosixPath):
         """
         ext = self.suffixes[-1]
         if not ext[1:].isdigit():
-            raise ValueError("No numerical primary extensions")
+            raise ValueError(f"{self} Does not have a primary numerical primary suffix")
         suffixes = self.suffixes.copy()
         del suffixes[-1]
         suffixes.insert(len(suffixes) - 1, ext)
@@ -168,7 +190,7 @@ class Path(PosixPath):
         Path('myfile.x.feather.001')
         """
         if not self.has_numerical_suffix():
-            raise ValueError("No numerical extensions")
+            raise ValueError(f"{self} has no numerical suffix")
         ix, ext = 0, self.suffixes[0]
         for i, s in enumerate(self.suffixes):
             if s[1:].isdigit():
