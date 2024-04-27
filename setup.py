@@ -7,6 +7,7 @@ setup(
     version="1.0",
     author="Torstein Sørnes",
     packages=["betterpath"],
+    package_dir={'betterpath':'src'},
     install_requires=[
         "fuzzywuzzy>=0.17.0",
     ],
