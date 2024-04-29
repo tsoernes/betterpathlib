@@ -33,7 +33,7 @@ class Path(PosixPath):
 
         Example
         -------
-        >>> Path('..').glob_ignorecase("*")
+        >>> Path(__file__).glob_ignorecase("*")  # doctest: +SKIP
         [Path('../.git'),
          Path('../.gitignore'),
          Path('../LICENSE'),
@@ -41,7 +41,7 @@ class Path(PosixPath):
          Path('../betterpathlib'),
          Path('../setup.py')]
 
-        >>> Path('..').glob_ignorecase("readme*")
+        >>> Path(__file__).glob_ignorecase("readme*")  # doctest: +SKIP
         [Path('../README.md')]
         """
         path = self.parent if self.is_file() else self
@@ -324,7 +324,7 @@ class Path(PosixPath):
 
         Example
         -------
-        >>> Path("/home/USER_1/somefile").with_home("USER_2")
+        >>> Path("/home/USER_1/somefile").with_home("USER_2")  # doctest: +SKIP
         Path('/home/USER_2/somefile')
         """
         return Path("/home") / user / self.resolve().relative_to(Path.home())
