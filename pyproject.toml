@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "betterpathlib"
+version = "0.0.1"
+authors = [
+  { name="Torstein Sørnes", email="t.soernes@gmail.com" },
+]
+description = "An Path library that is an extension to Pythons built-in pathlib.Path."
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "fuzzywuzzy>=0.17.0",
+]
+
+
+[project.urls]
+Homepage = "https://github.com/tsoernes/betterpathlib"
+Issues = "https://github.com/tsoernes/betterpathlib/issues"

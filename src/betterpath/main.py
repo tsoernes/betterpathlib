@@ -5,7 +5,7 @@ from pathlib import PosixPath
 from tempfile import NamedTemporaryFile
 from typing import Iterable, List, Optional, Tuple, NamedTuple
 
-from betterpath.utils import bytes2human
+from betterpathlib.utils import bytes2human
 from fuzzywuzzy import fuzz
 
 
@@ -38,7 +38,7 @@ class Path(PosixPath):
          Path('../.gitignore'),
          Path('../LICENSE'),
          Path('../README.md'),
-         Path('../betterpath'),
+         Path('../betterpathlib'),
          Path('../setup.py')]
 
         >>> Path('..').glob_ignorecase("readme*")
