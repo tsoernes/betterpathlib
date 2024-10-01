@@ -1,26 +1,24 @@
-[build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
-
-[project]
+[tool.poetry]
 name = "betterpathlib"
-version = "0.0.2"
-authors = [
-  { name="Torstein Sørnes", email="t.soernes@gmail.com" },
-]
+version = "0.0.4"
 description = "A Path library that is an extension to Python's built-in pathlib.Path."
+authors = ["Torstein Sørnes <t.soernes@gmail.com>"]
 readme = "README.md"
-requires-python = ">=3.9"
+homepage = "https://github.com/tsoernes/betterpathlib"
+repository = "https://github.com/tsoernes/betterpathlib"
+documentation = "https://github.com/tsoernes/betterpathlib"
+keywords = ["pathlib", "path", "filesystem"]
+license = "MIT"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
 
-dependencies = [
-    "fuzzywuzzy>=0.17.0",
-]
+[tool.poetry.dependencies]
+python = ">=3.11"
+fuzzywuzzy = ">=0.17.0"
 
-[project.urls]
-Homepage = "https://github.com/tsoernes/betterpathlib"
-Issues = "https://github.com/tsoernes/betterpathlib/issues"
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

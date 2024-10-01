@@ -265,7 +265,7 @@ class Path(PosixPath):
         """
         dst = Path(dst)
         if self.is_dir():
-            return shutil.copytree(self, dst, dirs_exist_ok)
+            return shutil.copytree(src=self, dst=dst, dirs_exist_ok=dirs_exist_ok)
         return shutil.copy2(self, dst)
 
     cp = copy
