@@ -2,7 +2,7 @@ import datetime
 import shlex
 import shutil
 import subprocess
-from pathlib import PosixPath
+from pathlib import Path as Path2
 from tempfile import NamedTemporaryFile
 from typing import Iterable, NamedTuple
 
@@ -13,7 +13,7 @@ from betterpathlib.utils import bytes2human
 DiskUsageHuman = NamedTuple("usage", [("total", str), ("used", str), ("free", str)])
 
 
-class Path(PosixPath):
+class Path(Path2):
     """
     An extension to Pythons built-in pathlib.Path.
 
@@ -232,8 +232,7 @@ class Path(PosixPath):
         """
         The disk size, the amount of used and free space on the disk of this path, in human readable format (KiB, MiB, etc.).
         """
-        du = shutil.disk_usage(self)
-        return DiskUsageHuman(*map(bytes2human, du))
+        return DiskUsageHuman(*map(bytes2human, shutil.disk_usage(self)))
 
     duh = disk_usage_human
     duh.__doc__ = "Alias for `disk_usage_human`.\n" + disk_usage.__doc__  # type: ignore
@@ -259,25 +258,8 @@ class Path(PosixPath):
     mv = move
     mv.__doc__ = "Alias for `move`.\n" + move.__doc__  # type: ignore
 
-    def rmtree(self, ignore_errors=False, *, onexc=None, dir_fd=None) -> None:
-        """
-        Recursively delete a directory tree.
-
-        If dir_fd is not None, it should be a file descriptor open to a directory;
-        path will then be relative to that directory.
-        dir_fd may not be implemented on your platform.
-        If it is unavailable, using it will raise a NotImplementedError.
-
-        If ignore_errors is set, errors are ignored; otherwise, if onexc
-        is set, it is called to handle the error with arguments (func,
-        path, exc_info) where func is platform and implementation dependent;
-        path is the argument to that function that caused it to fail; and
-        the value of exc_info describes the exception. For onexc it is the
-        exception instance, and for onerror it is a tuple as returned by
-        sys.exc_info().  If ignore_errors is false and onexc
-        is None, the exception is reraised.
-        """
-        shutil.rmtree(self, ignore_errors=ignore_errors, onexc=onexc, dir_fd=dir_fd)
+    rmtree = shutil.rmtree
+    chown = shutil.chown
 
     def copy(self, dst: "PathOrStr", dirs_exist_ok=False) -> "Path":
         """
