@@ -248,6 +248,26 @@ class Path(PosixPath):
 
     mv = move
 
+    def rmtree(self, ignore_errors=False, *, onexc=None, dir_fd=None) -> None:
+        """
+        Recursively delete a directory tree.
+
+        If dir_fd is not None, it should be a file descriptor open to a directory;
+        path will then be relative to that directory.
+        dir_fd may not be implemented on your platform.
+        If it is unavailable, using it will raise a NotImplementedError.
+
+        If ignore_errors is set, errors are ignored; otherwise, if onexc
+        is set, it is called to handle the error with arguments (func,
+        path, exc_info) where func is platform and implementation dependent;
+        path is the argument to that function that caused it to fail; and
+        the value of exc_info describes the exception. For onexc it is the
+        exception instance, and for onerror it is a tuple as returned by
+        sys.exc_info().  If ignore_errors is false and onexc
+        is None, the exception is reraised.
+        """
+        shutil.rmtree(self, ignore_errors=ignore_errors, onexc=onexc, dir_fd=dir_fd)
+
     def copy(self, dst: "PathOrStr", dirs_exist_ok=False) -> "Path":
         """
         Copy data to the destination.
