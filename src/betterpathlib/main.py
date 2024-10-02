@@ -1,4 +1,5 @@
 import datetime
+import shlex
 import shutil
 import subprocess
 from pathlib import PosixPath
@@ -78,9 +79,16 @@ class Path(PosixPath):
 
     def mtime(self) -> datetime.datetime:
         """
-        Modification time, as datetime
+        Last modification time, as datetime
         """
         return datetime.datetime.fromtimestamp(self.stat().st_mtime)
+
+    def modtime(self) -> str:
+        """
+        Last modification time, as a nice string
+        """
+        dt = datetime.datetime.fromtimestamp(self.stat().st_mtime)
+        return dt.strftime("%Y-%m-%d %H:%M")
 
     def prepend_suffix(self, suffix: str) -> "Path":
         """
@@ -294,20 +302,22 @@ class Path(PosixPath):
     cp = copy
     cp.__doc__ = "Alias for `copy`.\n" + copy.__doc__  # type: ignore
 
-    def ls(self, sort_by_time: bool = False) -> None:
+    def ls(
+        self,
+        args: list[str] | str = [
+            "-g",
+            "--almost-all",
+            "--group-directories-first",
+            "--human-readable",
+        ],
+    ) -> None:
         """
-        Run `ls` Linux command to list files.
+        Run the `ls` Linux command to list files.
         """
         path = str(self.resolve())
-        sort = "t" if sort_by_time else ""
-        subprocess.run(f"ls --group-directories-first -hoG{sort} " + path, shell=True)
-
-    def modtime(self) -> str:
-        """
-        Last modification time of given path, as a nice string
-        """
-        dt = datetime.datetime.fromtimestamp(self.stat().st_mtime)
-        return dt.strftime("%Y-%m-%d %H:%M")
+        if isinstance(args, str):
+            args = shlex.split(args)
+        subprocess.run(["ls"] + args + [path])
 
     def with_stem(self, stem: str) -> "Path":
         """
@@ -338,20 +348,22 @@ class Path(PosixPath):
         Example:
         >>> Path('/etc/anaconda/conf.d').with_parent('/tmp')
         Path('/tmp/conf.d')
+        >>> Path('/usr/share/applications/emacs.desktop').with_parent("~/.local/share/applications/")
+        Path('~/.local/share/applications/emacs.desktop')
         """
         parent_path = Path(parent_path)
         return parent_path / self.name
 
-    def with_home(self, user: str) -> "Path":
+    def with_user(self, user: str) -> "Path":
         """
-        Path for a different user
+        Path for a different user home directory
 
         Example
         -------
-        >>> Path("/home/USER_1/somefile").with_home("USER_2")  # doctest: +SKIP
+        >>> Path("/home/USER_1/somefile").with_user("USER_2")  # doctest: +SKIP
         Path('/home/USER_2/somefile')
         """
-        return Path("/home") / user / self.resolve().relative_to(Path.home())
+        return Path.home().parent / user / self.resolve().relative_to(Path.home())
 
     def add_suffix(self, suffix: str) -> "Path":
         """
@@ -366,6 +378,14 @@ class Path(PosixPath):
         return self.with_name(self.name + suffix)
 
     def with_suffixes(self, suffixes: Iterable[str]) -> "Path":
+        """
+        Replace current suffix(es) with the given suffixes
+
+        Example:
+        >>> Path("file.suffix1.suffix2").with_suffixes([".mkv", ".r00"])
+        Path('file.mkv.r00')
+        """
+        suffixes = [x if x.startswith(".") else "." + x for x in suffixes]
         return self.without_suffixes().with_suffix("".join(suffixes))
 
     def without_suffix(self, suffix: str) -> "Path":
