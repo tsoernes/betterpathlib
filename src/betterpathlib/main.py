@@ -13,7 +13,10 @@ from betterpathlib.utils import bytes2human
 DiskUsageHuman = NamedTuple("usage", [("total", str), ("used", str), ("free", str)])
 
 
-class Path(Path2):
+class Path(type(Path2())):
+    def __new__(cls, *pathsegments):
+        return super().__new__(cls, *pathsegments)
+
     """
     An extension to Pythons built-in pathlib.Path.
 
