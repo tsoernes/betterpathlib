@@ -3,7 +3,7 @@ import shutil
 import subprocess
 from pathlib import PosixPath
 from tempfile import NamedTemporaryFile
-from typing import Iterable, List, NamedTuple, Optional, Tuple
+from typing import Iterable, NamedTuple
 
 from fuzzywuzzy import fuzz
 
@@ -19,7 +19,7 @@ class Path(PosixPath):
     Provides convenience methods and methods for working with numerical suffixes.
     """
 
-    def glob_ignorecase(self, pattern: str) -> List["Path"]:
+    def glob_ignorecase(self, pattern: str) -> list["Path"]:
         """
         Glob ignoring case
 
@@ -53,7 +53,7 @@ class Path(PosixPath):
             pattern = f"*{pattern}*"
         return sorted(list(path.glob("".join(map(either, pattern)))))
 
-    def most_similar_path(self, recursive=True) -> Optional["Path"]:
+    def most_similar_path(self, recursive=True) -> "Path | None":
         """
         Return the path with the most similar name
 
@@ -211,13 +211,14 @@ class Path(PosixPath):
     def sizeh(self) -> str:
         return bytes2human(self.size())
 
-    def disk_usage(self) -> Tuple[int, int, int]:
+    def disk_usage(self) -> tuple[int, int, int]:
         """
         The disk size, the amount of used and free space on the disk of this path, in bytes.
         """
         return shutil.disk_usage(self)
 
     du = disk_usage
+    du.__doc__ = "Alias for `disk_usage`.\n" + disk_usage.__doc__  # type: ignore
 
     def disk_usage_human(self) -> DiskUsageHuman:
         """
@@ -227,6 +228,7 @@ class Path(PosixPath):
         return DiskUsageHuman(*map(bytes2human, du))
 
     duh = disk_usage_human
+    duh.__doc__ = "Alias for `disk_usage_human`.\n" + disk_usage.__doc__  # type: ignore
 
     def move(self, dst: "PathOrStr", overwrite: bool = False) -> "Path":
         """
@@ -247,6 +249,7 @@ class Path(PosixPath):
         return shutil.move(self, dst)
 
     mv = move
+    mv.__doc__ = "Alias for `move`.\n" + move.__doc__  # type: ignore
 
     def rmtree(self, ignore_errors=False, *, onexc=None, dir_fd=None) -> None:
         """
@@ -289,6 +292,7 @@ class Path(PosixPath):
         return shutil.copy2(self, dst)
 
     cp = copy
+    cp.__doc__ = "Alias for `copy`.\n" + copy.__doc__  # type: ignore
 
     def ls(self, sort_by_time: bool = False) -> None:
         """
@@ -453,16 +457,16 @@ class Path(PosixPath):
         ) as n:
             return Path(n.name)
 
+    @classmethod
+    def glob_cwd(cls, pattern: str = "", ignorecase: bool = False) -> list["Path"]:
+        """Glob the current working directory"""
+        if not pattern:
+            return sorted(list(Path().iterdir()))
+        if ignorecase:
+            return Path().cwd().glob_ignorecase(pattern)
+        if "*" not in pattern:
+            pattern = f"*{pattern}*"
+        return sorted(list(Path().cwd().glob(pattern)))
+
 
 PathOrStr = Path | str
-
-
-def glob_cwd(pattern: str = "", ignorecase: bool = False) -> List[Path]:
-    """Glob the current working directory"""
-    if not pattern:
-        return sorted(list(Path().iterdir()))
-    if ignorecase:
-        return Path().cwd().glob_ignorecase(pattern)
-    if "*" not in pattern:
-        pattern = f"*{pattern}*"
-    return sorted(list(Path().cwd().glob(pattern)))
