@@ -1,2 +1,3 @@
 from betterpathlib.main import Path  # noqa
-from betterpathlib.version import __version__  # noqa
+
+__version__ = "0.0.5"
