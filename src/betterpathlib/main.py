@@ -6,7 +6,7 @@ from pathlib import Path as Path2
 from tempfile import NamedTemporaryFile
 from typing import Iterable, NamedTuple
 
-from fuzzywuzzy import fuzz
+from thefuzz import fuzz
 
 from betterpathlib.utils import bytes2human
 
@@ -57,17 +57,17 @@ class Path(type(Path2())):
             pattern = f"*{pattern}*"
         return sorted(list(path.glob("".join(map(either, pattern)))))
 
-    def most_similar_path(self, recursive=True) -> "Path | None":
+    def most_similar_path(self, recursive: bool = False) -> "Path | None":
         """
         Return the path with the most similar name
 
         Parameters
         ---------
-            recursive (bool): Whether to search recursively in subdirectories. Default is True.
+            recursive (bool): Whether to search recursively in subdirectories. Default is False.
 
         Returns
         -------
-            Optional[Path]: The path with the most similar name, or None if no similar paths are found.
+            Path | None: The path with the most similar name, or None if no similar paths are found.
         """
         pattern = "**/*" if recursive else "*"
         candidates = [p for p in self.parent.glob(pattern) if p != self]

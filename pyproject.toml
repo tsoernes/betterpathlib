@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "betterpathlib"
-version = "0.0.5"
+version = "0.0.6"
 description = "A Path library that is an extension to Python's built-in pathlib.Path."
 authors = ["Torstein Sørnes <t.soernes@gmail.com>"]
 readme = "README.md"
@@ -17,7 +17,7 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = ">=3.11"
-fuzzywuzzy = ">=0.17.0"
+thefuzz = "^0.22.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
