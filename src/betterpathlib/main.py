@@ -2,11 +2,10 @@ import datetime
 import shlex
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path as Path2
 from tempfile import NamedTemporaryFile
-from typing import Iterable, NamedTuple
-
-from thefuzz import fuzz
+from typing import Any, Iterable, NamedTuple
 
 from betterpathlib.utils import bytes2human
 
@@ -69,6 +68,8 @@ class Path(type(Path2())):
         -------
             Path | None: The path with the most similar name, or None if no similar paths are found.
         """
+        from thefuzz import fuzz
+
         pattern = "**/*" if recursive else "*"
         candidates = [p for p in self.parent.glob(pattern) if p != self]
         if not candidates:
@@ -433,7 +434,16 @@ class Path(type(Path2())):
 
     def last_numerical_path(self) -> "Path":
         """
-        Returns the highest numerical path
+        Returns the last/highest numerical path
+
+        Example
+        -------
+        >>> import tempfile
+        >>> dir_ = Path(tempfile.gettempdir())
+        >>> p1 = dir_ / 'somefile.rar.001'
+        >>> (dir_ / 'somefile.rar.004').touch()
+        >>> p1.last_numerical_path()
+        Path('/tmp/somefile.rar.004')
         """
         path = self
         suffix = path.suffixes[-1][1:]
@@ -451,27 +461,44 @@ class Path(type(Path2())):
             raise FileNotFoundError
         return best
 
+    def read_json(self, **kwargs) -> Any:
+        """Read a JSON file. Additional keyword-arguments will be passed to json.load"""
+        import json
+
+        with open(self, "r") as fp:
+            json.load(fp, **kwargs)
+
     @classmethod
-    def random_path(cls, prefix=None, suffix=None, dir_=None) -> "Path":
+    def tempdir(cls) -> "Path":
+        """Returns the system's temporary directory"""
+        return cls(tempfile.gettempdir())
+
+    @classmethod
+    def random_path(cls, prefix=None, suffix=None, dir=None) -> "Path":
         """
-        Return a random, unused path. If `dir_` is not given, then the path
-        will be a temporary location.
+        Return a random, unused path. If `dir` is not given, then the path
+        will be in a temporary directory.
+
+        Example
+        -------
+        >>> Path.random_path("cat_image-", ".png")  # doctest: +SKIP
+        Path('/tmp/cat_image-m3xx9q0q.png')
         """
         with NamedTemporaryFile(
-            prefix=prefix, suffix=suffix, dir=dir_, delete=True
+            prefix=prefix, suffix=suffix, dir=dir, delete=True
         ) as n:
-            return Path(n.name)
+            return cls(n.name)
 
     @classmethod
     def glob_cwd(cls, pattern: str = "", ignorecase: bool = False) -> list["Path"]:
         """Glob the current working directory"""
         if not pattern:
-            return sorted(list(Path().iterdir()))
+            return sorted(list(cls().iterdir()))
         if ignorecase:
-            return Path().cwd().glob_ignorecase(pattern)
+            return cls().cwd().glob_ignorecase(pattern)
         if "*" not in pattern:
             pattern = f"*{pattern}*"
-        return sorted(list(Path().cwd().glob(pattern)))
+        return sorted(list(cls().cwd().glob(pattern)))
 
 
 PathOrStr = Path | str
