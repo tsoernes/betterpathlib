@@ -3,6 +3,7 @@ import shlex
 import shutil
 import subprocess
 import tempfile
+import urllib
 from pathlib import Path as Path2
 from tempfile import NamedTemporaryFile
 from typing import Any, Iterable, NamedTuple
@@ -146,7 +147,21 @@ class Path(type(Path2())):
             return True
         return False
 
-    def get_numerical(self) -> int | None:
+    def get_numerical(self) -> str | None:
+        """
+        Return the first numerical extension
+
+        Example
+        -------
+        >>> Path('myfile.001').get_numerical()
+        ".001"
+        """
+        for s in self.suffixes:
+            if s[1:].isdigit():
+                return s
+        return None
+
+    def get_numerical_int(self) -> int | None:
         """
         Return the number of the first numerical extension
 
@@ -220,8 +235,14 @@ class Path(type(Path2())):
         """
         return self.stat().st_size
 
-    def sizeh(self) -> str:
+    def size_human(self) -> str:
+        """
+        Size of file in human readable format
+        """
         return bytes2human(self.size())
+
+    sizeh = size_human
+    sizeh.__doc__ = "Alias for `size_human`.\n" + size_human.__doc__  # type: ignore
 
     def disk_usage(self) -> tuple[int, int, int]:
         """
@@ -257,7 +278,7 @@ class Path(type(Path2())):
         dst = Path(dst)
         if dst.exists() and dst.is_file() and not overwrite:
             raise FileExistsError(dst)
-        return shutil.move(self, dst)
+        return Path(shutil.move(self, dst))
 
     mv = move
     mv.__doc__ = "Alias for `move`.\n" + move.__doc__  # type: ignore
@@ -282,8 +303,8 @@ class Path(type(Path2())):
         """
         dst = Path(dst)
         if self.is_dir():
-            return shutil.copytree(src=self, dst=dst, dirs_exist_ok=dirs_exist_ok)
-        return shutil.copy2(self, dst)
+            return Path(shutil.copytree(src=self, dst=dst, dirs_exist_ok=dirs_exist_ok))
+        return Path(shutil.copy2(self, dst))
 
     cp = copy
     cp.__doc__ = "Alias for `copy`.\n" + copy.__doc__  # type: ignore
@@ -466,7 +487,74 @@ class Path(type(Path2())):
         import json
 
         with open(self, "r") as fp:
-            json.load(fp, **kwargs)
+            return json.load(fp, **kwargs)
+
+    def or_download(self, url, **kwargs) -> "Path":
+        """
+        Download file if it doesn't exist locally.
+        If the Path is a directory, then the file_name is inferred from the URL.
+        The Path for the destination file is returned.
+
+        Additional keyword-arguments are passed to `requests.get`
+        """
+        if self.is_dir():
+            import requests
+
+            file_name = urllib.parse.urlparse(url)
+            file_name = Path(parsed_url.path).name
+            if not file_name:
+                raise ValueError(f"Could not determine filename from {url=}")
+
+            file_path = self / file_name
+            if not file_path.exists():
+                resp = requests.get(url, **kwargs)
+                resp.raise_for_status()
+                file_path.write_bytes(resp.content)
+            return file_path
+        elif not self.exists():
+            import requests
+
+            resp = requests.get(url, **kwargs)
+            resp.raise_for_status()
+            self.write_bytes(resp.content)
+            return self
+        return self
+
+    def atomic_write(self, data: str | bytes, mode: str = "w", **kwargs: Any) -> None:
+        """
+        Write data atomically to avoid partial writes.
+
+        Args:
+            data: Content to write
+            mode: File open mode ('w' for text, 'wb' for binary)
+            **kwargs: Additional arguments passed to open()
+
+        Raises:
+            OSError: If write fails
+        """
+        tmp = self.parent / f".{self.name}.tmp"
+        try:
+            with open(tmp, mode, **kwargs) as f:
+                f.write(data)
+            tmp.replace(self)
+        finally:
+            if tmp.exists():
+                tmp.unlink()
+
+    def is_same_file(self, other: "Path | str") -> bool:
+        """Check if two paths point to the same file (following symlinks)."""
+        try:
+            return self.resolve() == Path(other).resolve()
+        except (OSError, RuntimeError):
+            return False
+
+    def is_relative_to_home(self) -> bool:
+        """Check if path is under user's home directory."""
+        try:
+            self.resolve().relative_to(Path.home())
+            return True
+        except ValueError:
+            return False
 
     @classmethod
     def tempdir(cls) -> "Path":
