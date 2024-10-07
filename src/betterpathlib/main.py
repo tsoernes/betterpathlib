@@ -500,7 +500,7 @@ class Path(type(Path2())):
         if self.is_dir():
             import requests
 
-            file_name = urllib.parse.urlparse(url)
+            parsed_url = urllib.parse.urlparse(url)
             file_name = Path(parsed_url.path).name
             if not file_name:
                 raise ValueError(f"Could not determine filename from {url=}")
