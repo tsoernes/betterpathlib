@@ -489,34 +489,72 @@ class Path(type(Path2())):
         with open(self, "r") as fp:
             return json.load(fp, **kwargs)
 
-    def or_download(self, url, **kwargs) -> "Path":
+    def or_download(self, url, progress_bar=False, **kwargs) -> "Path":
         """
-        Download file if it doesn't exist locally.
+        Download file atomically if it doesn't exist locally.
+        A progress bar is shown if `progress_bar` is True.
         If the Path is a directory, then the file_name is inferred from the URL.
         The Path for the destination file is returned.
 
         Additional keyword-arguments are passed to `requests.get`
         """
-        if self.is_dir():
+
+        def download(url, file_path, progress_bar, **kwargs):
             import requests
 
+            tmp_file_path = self.parent / f"{self.name}.tmp"
+            if progress_bar:
+                from tqdm import tqdm
+
+                # Streaming, so we can iterate over the response
+                resp = requests.get(url, stream=True, **kwargs)
+                resp.raise_for_status()
+
+                # Sizes in bytes.
+                total_size = int(resp.headers.get("content-length", 0))
+                block_size = 1024
+
+                print(f"Download {file_path=} from {url=}")
+                with tqdm(total=total_size, unit="B", unit_scale=True) as _progress_bar:
+                    # Atomic write
+                    try:
+                        with open(tmp_file_path, "wb") as file:
+                            for data in resp.iter_content(block_size):
+                                _progress_bar.update(len(data))
+                                file.write(data)
+                            tmp_file_path.replace(file_path)
+                    finally:
+                        if tmp_file_path.exists():
+                            tmp_file_path.unlink()
+
+                    if total_size != 0 and _progress_bar.n != total_size:
+                        raise requests.exceptions.RequestException(
+                            f"Could not download file {file_path=} from {url=}"
+                        )
+            else:
+                resp = requests.get(url, **kwargs)
+                resp.raise_for_status()
+                # Atomic write
+                try:
+                    with open(tmp_file_path, "wb") as f:
+                        f.write(resp.content)
+                    tmp_file_path.replace(file_path)
+                finally:
+                    if tmp_file_path.exists():
+                        tmp_file_path.unlink()
+
+        if self.is_dir():
             parsed_url = urllib.parse.urlparse(url)
-            file_name = Path(parsed_url.path).name
+            file_name = Path(urllib.parse.unquote(parsed_url.path)).name
             if not file_name:
                 raise ValueError(f"Could not determine filename from {url=}")
 
             file_path = self / file_name
             if not file_path.exists():
-                resp = requests.get(url, **kwargs)
-                resp.raise_for_status()
-                file_path.write_bytes(resp.content)
+                download(url, file_path, progress_bar, **kwargs)
             return file_path
         elif not self.exists():
-            import requests
-
-            resp = requests.get(url, **kwargs)
-            resp.raise_for_status()
-            self.write_bytes(resp.content)
+            download(url, self, progress_bar, **kwargs)
             return self
         return self
 
