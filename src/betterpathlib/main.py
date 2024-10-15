@@ -609,13 +609,13 @@ class Path(type(Path2())):
     cd = chdir
     cd.__doc__ = "Alias for `chdir`.\n" + chdir.__doc__  # type: ignore
 
-    @staticmethod
-    def tempdir() -> "Path":
+    @classmethod
+    def tempdir(cls) -> "Path":
         """Returns the system's temporary directory"""
         return Path(tempfile.gettempdir())
 
-    @staticmethod
-    def random_path(prefix=None, suffix=None, dir=None) -> "Path":
+    @classmethod
+    def random_path(cls, prefix=None, suffix=None, dir=None) -> "Path":
         """
         Return a random, unused path. If `dir` is not given, then the path
         will be in a temporary directory.
@@ -630,8 +630,8 @@ class Path(type(Path2())):
         ) as n:
             return Path(n.name)
 
-    @staticmethod
-    def glob_cwd(pattern: str = "", ignorecase: bool = False) -> list["Path"]:
+    @classmethod
+    def glob_cwd(cls, pattern: str = "", ignorecase: bool = False) -> list["Path"]:
         """Glob the current working directory"""
         if not pattern:
             return sorted(list(Path.cwd().iterdir()))
@@ -641,8 +641,8 @@ class Path(type(Path2())):
             pattern = f"*{pattern}*"
         return sorted(list(Path.cwd().glob(pattern)))
 
-    @staticmethod
-    def git_root() -> "Path":
+    @classmethod
+    def git_root(cls) -> "Path":
         """
         Find the Path of the file of the calling function, and traverse upwards the directory tree
         until a '.git' directory is found. This is usually the project root of the calling function.
