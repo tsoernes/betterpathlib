@@ -1,5 +1,6 @@
 import datetime
 
+import os
 import inspect
 import shlex
 import shutil
@@ -596,6 +597,18 @@ class Path(type(Path2())):
             return True
         except ValueError:
             return False
+
+    def chdir(self) -> None:
+        """
+        Change the current working directory to the specified path.
+
+        On some platforms, path may also be specified as an open file descriptor.
+        If this functionality is unavailable, using it raises an exception.
+        """
+        os.chdir(self)
+
+    cd = chdir
+    cd.__doc__ = "Alias for `chdir`.\n" + chdir.__doc__  # type: ignore
 
     @classmethod
     def tempdir(cls) -> "Path":
