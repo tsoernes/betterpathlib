@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "betterpathlib"
-version = "0.1.1"
+version = "0.1.2"
 description = "A Path library that is an extension to Python's built-in pathlib.Path."
 authors = ["Torstein Sørnes <t.soernes@gmail.com>"]
 readme = "README.md"

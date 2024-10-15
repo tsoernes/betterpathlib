@@ -610,13 +610,13 @@ class Path(type(Path2())):
     cd = chdir
     cd.__doc__ = "Alias for `chdir`.\n" + chdir.__doc__  # type: ignore
 
-    @classmethod
-    def tempdir(cls) -> "Path":
+    @staticmethod
+    def tempdir() -> "Path":
         """Returns the system's temporary directory"""
-        return cls(tempfile.gettempdir())
+        return Path(tempfile.gettempdir())
 
-    @classmethod
-    def random_path(cls, prefix=None, suffix=None, dir=None) -> "Path":
+    @staticmethod
+    def random_path(prefix=None, suffix=None, dir=None) -> "Path":
         """
         Return a random, unused path. If `dir` is not given, then the path
         will be in a temporary directory.
@@ -629,21 +629,21 @@ class Path(type(Path2())):
         with NamedTemporaryFile(
             prefix=prefix, suffix=suffix, dir=dir, delete=True
         ) as n:
-            return cls(n.name)
+            return Path(n.name)
 
-    @classmethod
-    def glob_cwd(cls, pattern: str = "", ignorecase: bool = False) -> list["Path"]:
+    @staticmethod
+    def glob_cwd(pattern: str = "", ignorecase: bool = False) -> list["Path"]:
         """Glob the current working directory"""
         if not pattern:
-            return sorted(list(cls().iterdir()))
+            return sorted(list(Path.cwd().iterdir()))
         if ignorecase:
-            return cls().cwd().glob_ignorecase(pattern)
+            return Path.cwd().glob_ignorecase(pattern)
         if "*" not in pattern:
             pattern = f"*{pattern}*"
-        return sorted(list(cls().cwd().glob(pattern)))
+        return sorted(list(Path.cwd().glob(pattern)))
 
-    @classmethod
-    def git_root(cls) -> "Path":
+    @staticmethod
+    def git_root() -> "Path":
         """
         Find the Path of the file of the calling function, and traverse upwards the directory tree
         until a '.git' directory is found. This is usually the project root of the calling function.
@@ -653,16 +653,16 @@ class Path(type(Path2())):
             # Go back two frames to get the caller of this function
             frame = inspect.stack()[2]
             caller_file = frame.filename
-            current = cls(caller_file).resolve().parent
+            current = Path(caller_file).resolve().parent
             # print(f"Got {caller_file=} and {current=} from stack[2]")
         elif len(stack) == 2:
             # Go back a frame to get the caller of this function
             frame = inspect.stack()[1]
             caller_file = frame.filename
-            current = cls(caller_file).resolve().parent
+            current = Path(caller_file).resolve().parent
             # print(f"Got {caller_file=} and {current=} from stack[1]")
         else:
-            current = cls.cwd().resolve()
+            current = Path.cwd().resolve()
             # print(f"Got directory={current} from cwd")
 
         while True:
