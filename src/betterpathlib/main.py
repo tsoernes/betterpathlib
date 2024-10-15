@@ -1,4 +1,6 @@
 import datetime
+
+import inspect
 import shlex
 import shutil
 import subprocess
@@ -444,13 +446,12 @@ class Path(type(Path2())):
             n_digs = len(ext)
             ext_i = int(ext) + 1
         else:
-            path = self.add_suffix(".ph")  # placeholder
+            path = self.add_suffix(".ph")  # placeholder to replace
             ext_i = start
         path = path.with_suffix("." + str(ext_i).zfill(n_digs))
         while path.exists():
             ext_i += 1
             path = path.with_suffix("." + str(ext_i).zfill(n_digs))
-        assert not path.exists()
         return path
 
     def last_numerical_path(self) -> "Path":
@@ -479,7 +480,9 @@ class Path(type(Path2())):
                 best = p
                 best_n = int(suffix)
         if not best.exists():
-            raise FileNotFoundError
+            raise FileNotFoundError(
+                f"No files with numerical suffix starting with {self} exists"
+            )
         return best
 
     def read_json(self, **kwargs) -> Any:
@@ -625,6 +628,38 @@ class Path(type(Path2())):
         if "*" not in pattern:
             pattern = f"*{pattern}*"
         return sorted(list(cls().cwd().glob(pattern)))
+
+    @classmethod
+    def git_root(cls) -> "Path":
+        """
+        Find the Path of the file of the calling function, and traverse upwards the directory tree
+        until a '.git' directory is found. This is usually the project root of the calling function.
+        """
+        stack = inspect.stack()
+        if len(stack) >= 3:
+            # Go back two frames to get the caller of this function
+            frame = inspect.stack()[2]
+            caller_file = frame.filename
+            current = cls(caller_file).resolve().parent
+            # print(f"Got {caller_file=} and {current=} from stack[2]")
+        elif len(stack) == 2:
+            # Go back a frame to get the caller of this function
+            frame = inspect.stack()[1]
+            caller_file = frame.filename
+            current = cls(caller_file).resolve().parent
+            # print(f"Got {caller_file=} and {current=} from stack[1]")
+        else:
+            current = cls.cwd().resolve()
+            # print(f"Got directory={current} from cwd")
+
+        while True:
+            if (current / ".git").exists():
+                return current
+            parent = current.parent
+            if parent == current:
+                raise ValueError("Reached root, could not find '.git' folder")
+            current = parent
+
 
 
 PathOrStr = Path | str
