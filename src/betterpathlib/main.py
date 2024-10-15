@@ -386,6 +386,12 @@ class Path(type(Path2())):
         suffix = suffix if suffix.startswith(".") else "." + suffix
         return self.with_name(self.name + suffix)
 
+    def append(self, suffix: str) -> "Path":
+        """
+        Append to name.
+        """
+        return self.with_name(self.name + suffix)
+
     def with_suffixes(self, suffixes: Iterable[str]) -> "Path":
         """
         Replace current suffix(es) with the given suffixes
