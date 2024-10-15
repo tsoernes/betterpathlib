@@ -1,7 +1,6 @@
 import datetime
-
-import os
 import inspect
+import os
 import shlex
 import shutil
 import subprocess
@@ -652,9 +651,12 @@ class Path(type(Path2())):
         if len(stack) >= 3:
             # Go back two frames to get the caller of this function
             frame = inspect.stack()[2]
-            caller_file = frame.filename
-            current = Path(caller_file).resolve().parent
+            caller_file = Path(frame.filename).resolve()
+            current = caller_file.parent
             # print(f"Got {caller_file=} and {current=} from stack[2]")
+            if caller_file.name == "interactiveshell.py":
+                # print(f"Running in REPL. Attempting to find root from cwd")
+                current = Path.cwd().resolve()
         elif len(stack) == 2:
             # Go back a frame to get the caller of this function
             frame = inspect.stack()[1]
@@ -672,7 +674,6 @@ class Path(type(Path2())):
             if parent == current:
                 raise ValueError("Reached root, could not find '.git' folder")
             current = parent
-
 
 
 PathOrStr = Path | str

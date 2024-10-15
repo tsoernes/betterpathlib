@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "betterpathlib"
-version = "0.1.2"
+version = "0.1.3"
 description = "A Path library that is an extension to Python's built-in pathlib.Path."
 authors = ["Torstein Sørnes <t.soernes@gmail.com>"]
 readme = "README.md"
@@ -26,8 +26,6 @@ thefuzz = "^0.22.1"
 
 [tool.poetry.group.download.dependencies]
 requests = "^2.32.3"
-
-[tool.poetry.group.download-progress.dependencies]
 tqdm = "^4.66.5"
 
 [build-system]
