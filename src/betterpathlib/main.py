@@ -6,8 +6,7 @@ import shutil
 import subprocess
 import tempfile
 import urllib
-from pathlib import Path as Path2
-from tempfile import NamedTemporaryFile
+from pathlib import Path as PathlibPath
 from typing import Any, Iterable, NamedTuple
 
 from betterpathlib.utils import bytes2human
@@ -15,7 +14,9 @@ from betterpathlib.utils import bytes2human
 DiskUsageHuman = NamedTuple("usage", [("total", str), ("used", str), ("free", str)])
 
 
-class Path(type(Path2())):
+class Path(type(PathlibPath())):
+    # The weird subclassing is in order to make sure it subclasses from PosixPath
+    # on Posix systems (Linux, Mac) and from WindowsPath on Windows systems.
     def __new__(cls, *pathsegments):
         return super().__new__(cls, *pathsegments)
 
@@ -23,6 +24,8 @@ class Path(type(Path2())):
     An extension to Pythons built-in pathlib.Path.
 
     Provides convenience methods and methods for working with numerical suffixes.
+    It also provide shortcuts to Pythons built-in functions from tempfile and shutil,
+    but in a Path friendly manner.
     """
 
     def glob_ignorecase(self, pattern: str) -> list["Path"]:
@@ -61,7 +64,9 @@ class Path(type(Path2())):
 
     def most_similar_path(self, recursive: bool = False) -> "Path | None":
         """
-        Return the path with the most similar name
+        Return the path with the most similar name. Requires module
+        `thefuzz` which is included when betterpathlib is installed
+        with the feature flag betterpathlib[similarpaths].
 
         Parameters
         ---------
@@ -506,6 +511,10 @@ class Path(type(Path2())):
         The Path for the destination file is returned.
 
         Additional keyword-arguments are passed to `requests.get`
+
+        Requires `requests` and `tqdm`, if progress_bar is True.
+        These two modules are included with the feature flag
+        betterpath[dowwnload]
         """
 
         def download(url, file_path, progress_bar, **kwargs):
@@ -621,6 +630,22 @@ class Path(type(Path2())):
         return Path(tempfile.gettempdir())
 
     @classmethod
+    def mkdtemp(cls, suffix: str | None =None, prefix: str | None =None, dir: "Path | str | None"=None) -> "Path":
+        """
+        User-callable function to create and return a unique temporary
+        directory.  The return value is the pathname of the directory.
+
+        Arguments are as for mkstemp, except that the 'text' argument is
+        not accepted.
+
+        The directory is readable, writable, and searchable only by the
+        creating user.
+
+        Caller is responsible for deleting the directory when done with it.
+        """
+        return Path(tempfile.mkdtemp(suffix=suffix, prefix=prefix, dir=dir))
+
+    @classmethod
     def random_path(cls, prefix=None, suffix=None, dir=None) -> "Path":
         """
         Return a random, unused path. If `dir` is not given, then the path
@@ -631,7 +656,7 @@ class Path(type(Path2())):
         >>> Path.random_path("cat_image-", ".png")  # doctest: +SKIP
         Path('/tmp/cat_image-m3xx9q0q.png')
         """
-        with NamedTemporaryFile(
+        with tempfile.NamedTemporaryFile(
             prefix=prefix, suffix=suffix, dir=dir, delete=True
         ) as n:
             return Path(n.name)
