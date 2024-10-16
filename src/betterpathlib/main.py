@@ -429,9 +429,9 @@ class Path(type(PathlibPath())):
 
     def append(self, suffix: str) -> "Path":
         """
-        Append to name.
+        Append to stem.
         """
-        return self.with_name(self.name + suffix)
+        return self.with_stem(self.stem + suffix)
 
     def with_suffixes(self, suffixes: Iterable[str]) -> "Path":
         """
@@ -444,18 +444,20 @@ class Path(type(PathlibPath())):
         suffixes = [x if x.startswith(".") else "." + x for x in suffixes]
         return self.without_suffixes().with_suffix("".join(suffixes))
 
-    def without_suffix(self, suffix: str) -> "Path":
+    def without_suffix(self, suffix: str | None = None) -> "Path":
         """
-        Remove a given suffix from the path.
+        Remove a suffix from path. If no suffix is specified, then the last suffix is removed.
 
         Example:
         >>> Path('add_polling_info.py.bak.new').without_suffix('.bak')
         Path('add_polling_info.py.new')
         """
-        suffix = suffix if suffix.startswith(".") else "." + suffix
-        return self.without_suffixes().with_suffix(
-            "".join(s for s in self.suffixes if s != suffix)
-        )
+        if suffix:
+            suffix = suffix if suffix.startswith(".") else "." + suffix
+            return self.without_suffixes().with_suffix(
+                "".join(s for s in self.suffixes if s != suffix)
+            )
+        return self.without_suffixes().with_suffixes(self.suffixes[:-1])
 
     def without_suffixes(self) -> "Path":
         """
