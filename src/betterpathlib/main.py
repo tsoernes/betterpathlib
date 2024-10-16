@@ -7,7 +7,7 @@ import subprocess
 import tempfile
 import urllib
 from pathlib import Path as PathlibPath
-from typing import Any, Iterable, NamedTuple
+from typing import Any, Callable, Iterable, NamedTuple
 
 from betterpathlib.utils import bytes2human
 
@@ -588,11 +588,31 @@ class Path(type(PathlibPath())):
         Raises:
             OSError: If write fails
         """
-        tmp = self.parent / f".{self.name}.tmp"
+        tmp = self.add_suffix(".tmp").next_unused_path()
         try:
             with open(tmp, mode, **kwargs) as f:
                 f.write(data)
             tmp.replace(self)
+        finally:
+            if tmp.exists():
+                tmp.unlink()
+
+    def atomic_write_with(self, write_fn: Callable[[str], Any], **kwargs: Any) -> Any:
+        """
+        Write data atomically to avoid partial writes.
+
+        Args:
+            write_fn: A callable taking a Path in string form for writing data
+            **kwargs: Additional arguments passed to write_fn
+
+        Returns:
+            The result from write_fn
+        """
+        tmp = self.add_suffix(".tmp").next_unused_path()
+        try:
+            result = write_fn(str(self.resolve()), **kwargs)
+            tmp.replace(self)
+            return result
         finally:
             if tmp.exists():
                 tmp.unlink()
@@ -630,7 +650,12 @@ class Path(type(PathlibPath())):
         return Path(tempfile.gettempdir())
 
     @classmethod
-    def mkdtemp(cls, suffix: str | None =None, prefix: str | None =None, dir: "Path | str | None"=None) -> "Path":
+    def mkdtemp(
+        cls,
+        suffix: str | None = None,
+        prefix: str | None = None,
+        dir: "Path | str | None" = None,
+    ) -> "Path":
         """
         User-callable function to create and return a unique temporary
         directory.  The return value is the pathname of the directory.
