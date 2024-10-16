@@ -242,6 +242,42 @@ class Path(type(PathlibPath())):
         """
         return self.stat().st_size
 
+    def size_kb(self) -> float:
+        """
+        Size of file in kilobytes
+        """
+        return self.size() / 1000
+
+    def size_kib(self) -> float:
+        """
+        Size of file in kibibytes
+        """
+        return self.size() / 1024
+
+    def size_mb(self) -> float:
+        """
+        Size of file in megabytes
+        """
+        return self.size_kb() / 1000
+
+    def size_mib(self) -> float:
+        """
+        Size of file in mebibytes
+        """
+        return self.size_kb() / 1024
+
+    def size_gb(self) -> float:
+        """
+        Size of file in gigabytes
+        """
+        return self.size_mb() / 1000
+
+    def size_gib(self) -> float:
+        """
+        Size of file in gibibytes
+        """
+        return self.size_mb() / 1024
+
     def size_human(self) -> str:
         """
         Size of file in human readable format
@@ -617,6 +653,22 @@ class Path(type(PathlibPath())):
             if tmp.exists():
                 tmp.unlink()
 
+    def write_pickle(self, obj, **kwargs) -> None:
+        """Write the pickled representation of the object obj to the"""
+
+        import pickle
+
+        with open(self, "wb") as fil:
+            pickle.dumps(fil, obj, **kwargs)
+
+    def pickle(self, obj, **kwargs) -> None:
+        """Write the pickled representation of the object obj to the"""
+
+        import pickle
+
+        with open(self, "wb") as fil:
+            pickle.dumps(fil, obj, **kwargs)
+
     def is_same_file(self, other: "Path | str") -> bool:
         """Check if two paths point to the same file (following symlinks)."""
         try:
@@ -643,6 +695,15 @@ class Path(type(PathlibPath())):
 
     cd = chdir
     cd.__doc__ = "Alias for `chdir`.\n" + chdir.__doc__  # type: ignore
+
+    def mkdir_(
+        self, mode=0o777, parents: bool = False, exist_ok: bool = False
+    ) -> "Path":
+        """
+        Create a new directory at this given path. Returns itself.
+        """
+        super().mkdir(mode=mode, parents=parents, exist_ok=exist_ok)
+        return self
 
     @classmethod
     def tempdir(cls) -> "Path":
