@@ -626,7 +626,7 @@ class Path(type(PathlibPath())):
         Raises:
             OSError: If write fails
         """
-        tmp = self.add_suffix(".tmp").next_unused_path()
+        tmp = self.add_suffix(".tmp").next_unused_path().resolve()
         try:
             with open(tmp, mode, **kwargs) as f:
                 f.write(data)
@@ -646,9 +646,9 @@ class Path(type(PathlibPath())):
         Returns:
             The result from write_fn
         """
-        tmp = self.add_suffix(".tmp").next_unused_path()
+        tmp = self.add_suffix(".tmp").next_unused_path().resolve()
         try:
-            result = write_fn(str(self.resolve()), **kwargs)
+            result = write_fn(str(tmp), **kwargs)
             tmp.replace(self)
             return result
         finally:
