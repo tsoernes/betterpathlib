@@ -369,7 +369,7 @@ class Path(type(PathlibPath())):
             args = shlex.split(args)
         subprocess.run(["ls"] + args + [path])
 
-    def listdir(self, sort:bool = True) -> Sequence["Path"]:
+    def listdir(self, sort: bool = True) -> Sequence["Path"]:
         """List all file in the directory"""
         paths = list(self.iterdir())
         if sort:
@@ -654,7 +654,7 @@ class Path(type(PathlibPath())):
 
     def atomic_write_with(self, write_fn: Callable[[str], Any], **kwargs: Any) -> Any:
         """
-        Write data atomically to avoid partial writes.
+        Write data atomically with the given function to avoid partial writes.
 
         Args:
             write_fn: A callable taking a Path in string form for writing data
