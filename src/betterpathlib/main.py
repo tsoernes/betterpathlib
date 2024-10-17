@@ -7,7 +7,7 @@ import subprocess
 import tempfile
 import urllib
 from pathlib import Path as PathlibPath
-from typing import Any, Callable, Iterable, NamedTuple
+from typing import Any, Callable, Iterable, NamedTuple, Sequence
 
 from betterpathlib.utils import bytes2human
 
@@ -368,6 +368,23 @@ class Path(type(PathlibPath())):
         if isinstance(args, str):
             args = shlex.split(args)
         subprocess.run(["ls"] + args + [path])
+
+    def listdir(self, sort:bool = True) -> Sequence["Path"]:
+        """List all file in the directory"""
+        paths = list(self.iterdir())
+        if sort:
+            paths.sort()
+        return paths
+
+    def join(self, *pathsegments: "str | Path") -> "Path":
+        """Alias for `joinpath`.
+
+        Combine this path with one or several arguments, and return a
+        new path representing either a subpath (if all arguments are relative
+        paths) or a totally different path (if one of the arguments is
+        anchored).
+        """
+        return self.joinpath(*pathsegments)
 
     def with_stem(self, stem: str) -> "Path":
         """
