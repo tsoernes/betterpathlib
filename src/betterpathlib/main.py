@@ -551,13 +551,6 @@ class Path(type(PathlibPath())):
             )
         return best
 
-    def read_json(self, **kwargs) -> Any:
-        """Read a JSON file. Additional keyword-arguments will be passed to json.load"""
-        import json
-
-        with open(self, "r") as fp:
-            return json.load(fp, **kwargs)
-
     def or_download(self, url, progress_bar=False, **kwargs) -> "Path":
         """
         Download file atomically if it doesn't exist locally.
@@ -631,6 +624,36 @@ class Path(type(PathlibPath())):
             return self
         return self
 
+    def read_json(self, **kwargs) -> Any:
+        """Read a JSON file. Additional keyword-arguments will be passed to json.load"""
+        import json
+
+        with open(self, "r") as fp:
+            return json.load(fp, **kwargs)
+
+    def write_json(self, obj, **kwargs) -> None:
+        """Write JSON file. Additional keyword-arguments will be passed to json.dump"""
+        import json
+
+        with open(self, "w") as fp:
+            json.dump(obj, fp, **kwargs)
+
+    def read_pickle(self, **kwargs) -> Any:
+        """Read the pickled representation of the object."""
+
+        import pickle
+
+        with open(self, "rb") as fil:
+            return pickle.load(fil, **kwargs)
+
+    def write_pickle(self, obj, **kwargs) -> None:
+        """Write the pickled representation of the object obj to the path."""
+
+        import pickle
+
+        with open(self, "wb") as fil:
+            pickle.dump(fil, obj, **kwargs)
+
     def atomic_write(self, data: str | bytes, mode: str = "w", **kwargs: Any) -> None:
         """
         Write data atomically to avoid partial writes.
@@ -671,22 +694,6 @@ class Path(type(PathlibPath())):
         finally:
             if tmp.exists():
                 tmp.unlink()
-
-    def write_pickle(self, obj, **kwargs) -> None:
-        """Write the pickled representation of the object obj to the"""
-
-        import pickle
-
-        with open(self, "wb") as fil:
-            pickle.dumps(fil, obj, **kwargs)
-
-    def pickle(self, obj, **kwargs) -> None:
-        """Write the pickled representation of the object obj to the"""
-
-        import pickle
-
-        with open(self, "wb") as fil:
-            pickle.dumps(fil, obj, **kwargs)
 
     def is_same_file(self, other: "Path | str") -> bool:
         """Check if two paths point to the same file (following symlinks)."""
