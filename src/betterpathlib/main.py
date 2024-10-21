@@ -647,12 +647,12 @@ class Path(type(PathlibPath())):
             return pickle.load(fil, **kwargs)
 
     def write_pickle(self, obj, **kwargs) -> None:
-        """Write the pickled representation of the object obj to the path."""
+        """Write the pickled representation of the object obj to the path. Additional keyword-arguments will be passed to pickle.dump"""
 
         import pickle
 
         with open(self, "wb") as fil:
-            pickle.dump(fil, obj, **kwargs)
+            pickle.dump(obj, fil, **kwargs)
 
     def atomic_write(self, data: str | bytes, mode: str = "w", **kwargs: Any) -> None:
         """
